@@ -1,3 +1,5 @@
+![logo logSWL](logo.png "logo logSWL")
+
 # logSWL
 Journal de trafic opensource pour les écouteurs.
 
@@ -12,8 +14,10 @@ Ce programme nécessite Python3.12 , pyQT5.15 ainsi que [ADIF-FILE](https://gith
 ## Roadmap
 - [x] 01/10/2024 Première version permettant d'enregistrer, modifier, et supprimer des QSO.
 - [x] 05/10/2024 Export ADIF pour eqsl.cc/qrzcq.com
-- [x] 10/10/10 Carte des pays écoutés
-- [ ] possibilité de voir l'image reçu d'un QSO SSTV
+- [x] 10/10/2024 Carte des pays écoutés
+- [x] 15/10/2024 Ajout de la traduction de l'application
+- [ ] Possibilité de voir l'image reçu d'un QSO SSTV
+
 
 ## Contributions
 Pour faire progresser logSWL, vous pouvez contribuer en :

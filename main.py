@@ -1,5 +1,5 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import QTimer, QTranslator, QSettings, QCoreApplication
 from PyQt5.QtGui import  QIcon, QPixmap
 import sys
 from fen_station import Ui_fen_station
@@ -19,6 +19,8 @@ logging.basicConfig(level=logging.DEBUG)  # Changez en logging.INFO ou  logging.
 class ApplicationIHM:
     def __init__(self):
         super(ApplicationIHM, self).__init__()
+        self.translator = QTranslator()  # Initialisation du traducteur
+
         # Création de l'application
         self.app = QtWidgets.QApplication(sys.argv)
         self.actionqso = 0
@@ -54,6 +56,9 @@ class ApplicationIHM:
         self.ui.actionMap_des_QSO.triggered.connect(self.open_map)
         # Connexion menu pour ouvrir la fenêtre "ma station"
         self.ui.actionMa_station.triggered.connect(self.open_station_dialog)
+        # Connexion menu pour configuration langue
+        self.ui.actionFrancais.triggered.connect(lambda: self.change_language("fr"))
+        self.ui.actionAnglais.triggered.connect(lambda: self.change_language("en"))
         # Connexion MOD pour ouvrir la fenêtre "qso"
         self.ui.bouton_nouveau.clicked.connect(lambda: self.open_qso_dialog(["new",0]))
         self.ui.bouton_modifier.clicked.connect(lambda: self.open_qso_dialog(["mod",0]))
@@ -62,9 +67,15 @@ class ApplicationIHM:
         self.ui.actionA_propos.triggered.connect(self.open_about_dialog)
         # Connecter le signal clicked à la méthode de sélection
         self.ui.tableView.clicked.connect(self.select_row)
+        # Connecter la fermeture de l'application à la sauvegarde des paramètres
+        self.app.aboutToQuit.connect(self.save_settings)
         self.populate_table()
         # Affichage de la fenêtre principale
         self.mw.show()
+        # Initialisation des paramètres pour mémoriser la configuration
+        self.settings = QSettings("bricodx_dev", "logSWL")
+        # Charger la langue précédente si elle existe
+        self.chargement_settings()
         self.update_date_time()
         # Création et configuration du timer
         self.timer = QTimer()
@@ -98,11 +109,6 @@ class ApplicationIHM:
             filtered_row[3] = f"{filtered_row[3][:2]}:{filtered_row[3][2:]}"
             filtered_row[2] = f"{filtered_row[2][6:]}-{filtered_row[2][4:6]}-{filtered_row[2][:4]}"
 
-            '''items = [QtGui.QStandardItem(str(field) if field is not None and field != "0" else "") for field in filtered_row]
-            for item in items:
-                item.setTextAlignment(QtCore.Qt.AlignCenter)
-                item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)  # Rendre la cellule non modifiable
-            model.appendRow(items)'''
             # Créer les items pour chaque cellule
             items = []
             for index,field in enumerate(filtered_row):
@@ -139,49 +145,51 @@ class ApplicationIHM:
         model.appendRow(items)
 
     def open_map(self):
-        self.map_window = grid.MapWindow()
-        self.map_window.show()
-
+        self.mapdialog = QtWidgets.QDialog()  # Crée un objet QDialog
+        self.ui_map = grid.Ui_mapDialog()
+        self.ui_map.setupUi(self.mapdialog)  # Passez l'instance de dialog à setupUi
+        self.mapdialog.setWindowFlags(
+            QtCore.Qt.WindowCloseButtonHint | QtCore.Qt.WindowTitleHint)  # suppression du bouton ? dans la barre de titre
+        self.mapdialog.show()
 
     # Méthode pour ouvrir la boîte de dialogue "À propos"
     def open_about_dialog(self):
         dialog = QtWidgets.QDialog()  # Crée un objet QDialog
         ui = Ui_Dialog()  # Instancie l'UI de la boîte de dialogue
         ui.setupUi(dialog)  # Configure l'UI
-        # Créer un modèle pour le QListView
-        model = QtGui.QStandardItemModel()  # Utiliser QStandardItemModel pour peupler le QListView
-        # Peupler le modèle avec des données
-        data = ["20/09/2024   Début du codage de cette application ", "06/10/2024   L'application est fonctionnel"]
-        for item in data:
-            model.appendRow(QtGui.QStandardItem(item))  # Ajouter chaque item au modèle
-        # Assigner le modèle au QListView
-        ui.listView.setModel(model)  # Assigner le modèle au QListView
+        dialog.setWindowFlags(QtCore.Qt.WindowCloseButtonHint | QtCore.Qt.WindowTitleHint) # suppression du bouton ? dans la barre de titre
         dialog.exec_()  # Affiche la boîte de dialogue de manière modale
 
     # Méthode pour ouvrir la fenetre de saisi des QSO
     def open_qso_dialog(self, typeqso):
         if not self.ui.affich_mycall.text() or not self.ui.affich_mygrid.text():
-            QtWidgets.QMessageBox.warning(None, "Attention",
-                               "N'oubliez pas de saisir votre indicatif et votre QTH")
+            self.show_message("warning", "Attention", "N'oubliez pas de saisir votre indicatif et votre QTH")
             return
         if self.actionqso == 0 and typeqso[0] != "new":
-            QtWidgets.QMessageBox.warning(None,"Attention",
-                                          "Avant de supprimer ou modifier un QSO, il faut sélectionner une ligne")
+            self.show_message("warning", "Attention", "Avant de supprimer ou modifier un QSO, il faut sélectionner une ligne")
             return
         ligne_selectionnee = self.actionqso
         self.actionqso = 0 # Réinitialiser la sélection
         self.ui.tableView.clearSelection() # Désélectionner les lignes dans le tableau
         self.qsodialog = QtWidgets.QDialog()  # Crée un objet QDialog
+        self.qsodialog.setWindowFlags(
+            QtCore.Qt.WindowCloseButtonHint | QtCore.Qt.WindowTitleHint)  # suppression du bouton ? dans la barre de titre
         self.ui2 = Ui_fen_qso()  # Instancie l'UI de la boîte de dialogue
         self.ui2.setupUi(self.qsodialog)  # Configure l'UI
         self.qsodialog.show()  # Affiche la boîte de dialogue de manière non modale
         if typeqso[0] == "new":
-            self.ui2.label_titre.setText(" Nouveau QSO")
+            self.ui2.label_suppr.hide()
+            self.ui2.label_modifier.hide()
+            self.ui2.label_ajouter.show()
         elif typeqso[0] == "mod":
-            self.ui2.label_titre.setText(" Modifier un QSO")
+            self.ui2.label_ajouter.hide()
+            self.ui2.label_suppr.hide()
+            self.ui2.label_modifier.show()
         elif typeqso[0] == "sup":
-            self.ui2.label_titre.setText(" Supprimer un QSO")
-        choixmode = ["AM","FM","SSB","CW","SSTV","DIGITALVOICE","RTTY", ]
+            self.ui2.label_modifier.hide()
+            self.ui2.label_ajouter.hide()
+            self.ui2.label_suppr.show()
+        choixmode = ["AM","FM","SSB","CW","SSTV","DIGITALVOICE"]
         self.ui2.choix_mode.addItems(choixmode)
         self.ui2.saisie_timeon.setText(self.now_utc.strftime("%H%M"))
         self.ui2.saisie_date.setText(self.now_utc.strftime("%d%m%Y")) # Format de la date et de l'heure
@@ -222,29 +230,29 @@ class ApplicationIHM:
             # Appel à la fonction d'insertion
             if connection.db.delete_ligne(sql, (ligne_selectionnee,)):
                 # Si l'insertion a réussi, lance une autre action
-                QtWidgets.QMessageBox.information(None, "Succès", "La ligne a été supprimée")
+                self.show_message("info", "Succès", "La ligne a été supprimée")
                 # Après l'insertion dans la base
                 self.populate_table()
                 self.qsodialog.close()
             else:
                 # Si la suppression a échouée, affiche une erreur
-                QtWidgets.QMessageBox.warning(None, "Erreur", "La suppression a échoué")
+                self.show_message("warning", "Erreur", "La suppression a échoué")
 
         else:
             data = [self.ui.affich_mycall.text(), self.ui.affich_mygrid.text(), self.ui2.saisie_calla.text(), self.ui2.saisie_date.text(), self.ui2.saisie_timeon.text(), self.ui2.saisie_freq.text(), self.ui2.choix_mode.currentText(), self.ui2.saisie_rsta.text(), self.ui2.saisie_comment.text(), self.ui2.saisie_callb.text(), self.ui2.saisie_timeoff.text(), self.ui2.saisie_rstb.text()]
             data_obligatoire = [2,5,7]
             for index in data_obligatoire:
                 if not data[index]:
-                    QtWidgets.QMessageBox.warning(None,"Attention", f"Certains champs obligatoires sont vides")
+                    self.show_message("warning", "Attention", "Certains champs obligatoires sont vides")
                     return
             if not self.ui2.saisie_date.text().isdigit() or len(self.ui2.saisie_date.text()) > 8 or int(self.ui2.saisie_date.text()[:2]) > 31 or int(self.ui2.saisie_date.text()[2:4]) > 12:
-                QtWidgets.QMessageBox.warning(None,"Attention", f"DATE n'est pas correct")
+                self.show_message("warning", "Attention", "DATE n'est pas correct")
                 return
             if len(self.ui2.saisie_freq.text()) > 20:
-                QtWidgets.QMessageBox.warning(None, "Attention", f"FREQ est trop long")
+                self.show_message("warning", "Attention", "FREQ est trop long")
                 return
             if not self.ui2.saisie_rsta.text().isdigit() or len(self.ui2.saisie_rsta.text()) > 5:
-                QtWidgets.QMessageBox.warning(None, "Attention", f"RST_SENT n'est pas correct")
+                self.show_message("warning", "Attention", "RST_SENT n'est pas correct")
                 return
             band_qso = "None"
             for i, (min_freq, max_freq) in enumerate(self.BANDS_RANGES):
@@ -274,16 +282,20 @@ class ApplicationIHM:
                 # Appel à la fonction d'insertion
                 if connection.db.insert_data(sql, data):
                     # Si l'insertion a réussi, lance une autre action
-                    QtWidgets.QMessageBox.information(None, "Succès", "Le QSO a été enregistré avec succès")
+                    self.show_message("info", "Succès", "Le QSO a été enregistré avec succès")
                     # Après l'insertion dans la base
                     callsign.verif_callsign(fonct_annexe.format_callsign(self.ui2.saisie_calla.text()),)
                     if self.ui2.saisie_callb.text(): callsign.verif_callsign(fonct_annexe.format_callsign(self.ui2.saisie_callb.text()),)
                     self.populate_table()
                     self.qsodialog.close()
                     self.open_qso_dialog(["new", 0])
+                    if data:
+                        self.ui2.saisie_freq.setText(data[6])
+                        # Sélectionner l'élément correspondant dans le QComboBox (choix_mode)
+                        self.ui2.choix_mode.setCurrentText(data[7])
                 else:
                     # Si l'insertion a échoué, affiche une erreur
-                    QtWidgets.QMessageBox.warning(None, "Erreur", "L'enregistrement a échoué")
+                    self.show_message("warning", "Erreur", "L'enregistrement a échoué")
 
             elif typeqso == "mod":
                 data = (
@@ -304,7 +316,7 @@ class ApplicationIHM:
                 # Appel à la fonction de modification
                 if connection.db.modif_ligne(sql, data):
                     # Si la modification a réussi, lance une autre action
-                    QtWidgets.QMessageBox.information(None, "Succès", "Le QSO a été modifié avec succès")
+                    self.show_message("info", "Succès", "Le QSO a été modifié avec succès")
                     # Après l'insertion dans la base
                     callsign.verif_callsign(fonct_annexe.format_callsign(self.ui2.saisie_calla.text()),)
                     if self.ui2.saisie_callb.text(): callsign.verif_callsign(
@@ -313,11 +325,14 @@ class ApplicationIHM:
                     self.qsodialog.close()
                 else:
                     # Si la modification a échouée, affiche une erreur
-                    QtWidgets.QMessageBox.warning(None, "Erreur", "La modification a échoué")
+                    self.show_message("warning", "Erreur", "La modification a échoué")
+
 
     #affichage fenetre configuration ma station
     def open_station_dialog(self):
         self.stationdialog = QtWidgets.QDialog()  # Crée un objet QDialog
+        self.stationdialog.setWindowFlags(
+            QtCore.Qt.WindowCloseButtonHint | QtCore.Qt.WindowTitleHint)  # suppression du bouton ? dans la barre de titre
         self.ui3 = Ui_fen_station()  # Instancie l'UI de la boîte de dialogue
         self.ui3.setupUi(self.stationdialog)  # Configure l'UI
         self.stationdialog.show()  # Affiche la boîte de dialogue de manière non modale
@@ -338,7 +353,7 @@ class ApplicationIHM:
         # Appel à la fonction de modification
         if connection.db.insert_data(sql, data):
             # Si la modification a réussi, lance une autre action
-            QtWidgets.QMessageBox.information(None, "Succès", "La station a été modifié avec succès")
+            self.show_message("info", "Succès", "La station a été modifiée avec succès")
             # Après l'insertion dans la base
             self.ui.affich_mygrid.setText(data[2])
             self.ui.affich_mycall.setText(data[1])
@@ -346,7 +361,7 @@ class ApplicationIHM:
             self.stationdialog.close()
         else:
             # Si la modification a échouée, affiche une erreur
-            QtWidgets.QMessageBox.warning(None, "Erreur", "La modification a échoué")
+            self.show_message("warning", "Erreur", "La modification a échoué")
 
 
     # mise à jour de la date et de l'heure
@@ -373,18 +388,16 @@ class ApplicationIHM:
             self.actionqso = int(value)
         else:
             # Obtenir le chemin de l'image depuis le modèle
-            print (model.data(model.index(row, 14)))
             file_path = model.data(model.index(row, 14), QtCore.Qt.UserRole)  # Changez l'index selon la colonne où le chemin est stocké
             if file_path:
                 self.show_image(file_path)
-
-        for i in range(model.columnCount()):
-            print(f"Column {i}: {model.data(model.index(row, i))}")
 
     def show_image(self, file_path):
         # Créer un QDialog pour afficher l'image
         dialog = QtWidgets.QDialog()
         dialog.setWindowTitle("Image")
+        # Supprime le bouton d'aide et conserve uniquement le bouton de fermeture
+        dialog.setWindowFlags(QtCore.Qt.WindowCloseButtonHint | QtCore.Qt.WindowTitleHint)
 
         # Créer un QLabel pour afficher l'image
         label = QtWidgets.QLabel(dialog)
@@ -399,6 +412,62 @@ class ApplicationIHM:
         # Afficher le dialogue
         dialog.exec_()
 
+    def show_message(self, msg_type, title_key, text_key):
+        title = QCoreApplication.translate("Messages", title_key)
+        text = QCoreApplication.translate("Messages", text_key)
+
+        if msg_type == "info":
+            QtWidgets.QMessageBox.information(None, title, text)
+        elif msg_type == "warning":
+            QtWidgets.QMessageBox.warning(None, title, text)
+
+    def change_language(self, language_code):
+        # Décharger le traducteur actuel
+        self.app.removeTranslator(self.translator)
+        # Charger le nouveau fichier de traduction
+        if language_code == 'fr':
+            self.translator.load("lang/lang_fr.qm")
+        elif language_code == 'en':
+            self.translator.load("lang/lang_en.qm")
+        self.app.installTranslator(self.translator)
+        # Mettre à jour l'interface principale
+        self.ui.retranslateUi(self.mw)
+        # Mettre à jour toutes les fenêtres/dialogues ouverts
+        if hasattr(self, 'qsodialog') and self.qsodialog.isVisible():
+            self.ui2.retranslateUi(self.qsodialog)
+        # Refaire pour d'autres dialogues ou fenêtres
+        if hasattr(self, 'stationdialog') and self.stationdialog.isVisible():
+            self.ui3.retranslateUi(self.stationdialog) # pour fen_station
+        # Refaire pour d'autres dialogues ou fenêtres
+        if hasattr(self, 'mapdialog') and self.mapdialog.isVisible():
+               self.ui_map.retranslateUi(self.mapdialog)  # pour fen_station
+        # ... (répéter pour d'autres fenêtres ou dialogues ouverts)
+        if hasattr(self, 'dialog') and self.dialog.isVisible():
+            self.ui.retranslateUi(self.dialog) # pour la fenêtre "À propos"
+        # Enregistrer la langue sélectionnée dans les paramètres
+        self.settings.setValue("language", language_code)
+
+    def load_language_settings(self):
+        # Récupérer la langue enregistrée
+        language_code = self.settings.value("language", "fr")  # "fr" par défaut si aucune langue n'est sauvegardée
+        self.change_language(language_code)
+
+    def chargement_settings(self):
+        # chargement de la langue enregistrée
+        self.load_language_settings()
+        # Charger la position et la taille de la fenêtre principale
+        geometry = self.settings.value("window/geometry")
+        state = self.settings.value("window/state")
+
+        if geometry:
+            self.mw.restoreGeometry(geometry)
+        if state:
+            self.mw.restoreState(state)
+
+    # Méthodes de sauvegarde et de chargement des paramètres de la fenêtre
+    def save_settings(self):
+        self.settings.setValue("window/geometry", self.mw.saveGeometry())
+        self.settings.setValue("window/state", self.mw.saveState())
 
 
 if __name__ == "__main__":
