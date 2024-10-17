@@ -54,6 +54,8 @@ class Ui_Dialog(object):
         self.listWidget.addItem(item)
         item = QtWidgets.QListWidgetItem()
         self.listWidget.addItem(item)
+        item = QtWidgets.QListWidgetItem()
+        self.listWidget.addItem(item)
 
         self.retranslateUi(Dialog)
         self.button_fermer.clicked.connect(Dialog.close) # type: ignore
@@ -74,6 +76,8 @@ class Ui_Dialog(object):
         item.setText(_translate("Dialog", "06/10/2024   L\'application est fonctionnel"))
         item = self.listWidget.item(2)
         item.setText(_translate("Dialog", "10/10/2024   Mise en ligne de la v1.0 sur github"))
+        item = self.listWidget.item(3)
+        item.setText(_translate("Dialog", "15/10/2024   Ajout système de traduction"))
         self.listWidget.setSortingEnabled(__sortingEnabled)
 
 
