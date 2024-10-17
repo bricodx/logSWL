@@ -16,6 +16,7 @@ Ce programme nécessite Python3.12 , pyQT5.15 ainsi que [ADIF-FILE](https://gith
 - [x] 05/10/2024 Export ADIF pour eqsl.cc/qrzcq.com
 - [x] 10/10/2024 Carte des pays écoutés
 - [x] 15/10/2024 Ajout de la traduction de l'application
+- [x] 18/10/2024 La map des QSO peut maintenant être filtrée par BAND, et elle est centrée sur votre locator (à la place de Paris)
 - [ ] Possibilité de voir l'image reçu d'un QSO SSTV
 
 

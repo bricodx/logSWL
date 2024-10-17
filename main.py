@@ -23,9 +23,10 @@ class ApplicationIHM:
 
         # Création de l'application
         self.app = QtWidgets.QApplication(sys.argv)
+        self.app.setWindowIcon(QtGui.QIcon("logo32x32.png"))
         self.actionqso = 0
 
-        # All the bands listed in the ADIF specification.
+        '''# All the bands listed in the ADIF specification.
         self.BANDS = ["", "2190m", "630m", "560m", "160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m",
                  "6m", "4m", "2m", "1.25m", "70cm", "33cm", "23cm", "13cm", "9cm", "6cm", "3cm", "1.25cm", "6mm", "4mm",
                  "2.5mm", "2mm", "1mm"]
@@ -35,7 +36,42 @@ class ApplicationIHM:
                         (24890, 24990), (28000, 29700), (50000, 54000), (70000, 71000), (144000, 148000), (222000, 225000),
                         (420000, 450000), (902000, 928000), (1240000, 1300000), (2300000, 2450000), (3300000, 3500000),
                         (5650000, 5925000), (10000000, 10500000), (24000000, 24250000), (47000000, 47200000),
-                        (75500000, 81000000), (119980000, 120020000), (142000000, 149000000), (241000000, 250000000)]
+                        (75500000, 81000000), (119980000, 120020000), (142000000, 149000000), (241000000, 250000000)]'''
+
+        # Dictionnaire pour stocker les bandes et leurs plages de fréquences
+        self.BANDS_DATA = {
+            "": (None, None),
+            "2190m": (136, 137),
+            "630m": (472, 479),
+            "560m": (501, 504),
+            "160m": (1800, 2000),
+            "80m": (3500, 4000),
+            "60m": (5102, 5406.5),
+            "40m": (7000, 7300),
+            "30m": (10000, 10150),
+            "20m": (14000, 14350),
+            "17m": (18068, 18168),
+            "15m": (21000, 21450),
+            "12m": (24890, 24990),
+            "10m": (28000, 29700),
+            "6m": (50000, 54000),
+            "4m": (70000, 71000),
+            "2m": (144000, 148000),
+            "1.25m": (222000, 225000),
+            "70cm": (420000, 450000),
+            "33cm": (902000, 928000),
+            "23cm": (1240000, 1300000),
+            "13cm": (2300000, 2450000),
+            "9cm": (3300000, 3500000),
+            "6cm": (5650000, 5925000),
+            "3cm": (10000000, 10500000),
+            "1.25cm": (24000000, 24250000),
+            "6mm": (47000000, 47200000),
+            "4mm": (75500000, 81000000),
+            "2.5mm": (119980000, 120020000),
+            "2mm": (142000000, 149000000),
+            "1mm": (241000000, 250000000),
+        }
 
         # Création de la fenêtre principale
         self.mw = QtWidgets.QMainWindow()
@@ -85,8 +121,11 @@ class ApplicationIHM:
 
     # Méthode pour remplir le QTableView
     def populate_table(self):
-        largeur_des_colonnes = [60,90,100,70,90,80,100,70,70,90,70,70,70,180,30]
-        entete_colonne = ["Id", "CALL", "DATE", "TIME_ON", "FREQ", "BAND", "MODE", "RST_SENT","LOCA","CALL_B", "RST_B","LOCB","TIME_OFF","COMMENT","img"]
+        largeur_des_colonnes = [60, 90, 100, 70, 90, 80, 100, 70, 70, 90, 70, 70, 70, 180, 30]
+        entete_colonne = ["Id", "CALL", "DATE", "TIME_ON", "FREQ", "BAND", "MODE", "RST_SENT", "LOCA", "CALL_B",
+                          "RST_B", "LOCB", "TIME_OFF", "COMMENT", "img"]
+
+        icon = QIcon("sstv/icon.png")  # Créer un QIcon à partir du QPixmap redimensionné
         sql = '''SELECT * FROM qso ORDER BY "idqso" DESC'''
         liste_all = connection.db.fetch_data(sql)
         nbre_item = len(liste_all)
@@ -96,7 +135,8 @@ class ApplicationIHM:
         # Ajouter des entêtes de colonnes (omettre les colonnes 2 et 4 par exemple)
         # Supposons que self.entete_colonne a été définie avec toutes les colonnes disponibles
         # Vous pouvez également créer une liste personnalisée d'entêtes pour les colonnes à afficher.
-        colonnes_a_afficher = [0, 3, 5, 6, 9, 8, 10, 11,14, 4, 12,15, 7, 13]  # Indices des colonnes que vous voulez afficher
+        colonnes_a_afficher = [0, 3, 5, 6, 9, 8, 10, 11, 14, 4, 12, 15, 7,
+                               13]  # Indices des colonnes que vous voulez afficher
 
         # Ajouter des entêtes de colonnes
         model.setHorizontalHeaderLabels(entete_colonne)
@@ -105,19 +145,20 @@ class ApplicationIHM:
         for row in liste_all:
             # Sélectionner uniquement les colonnes que vous souhaitez afficher
             filtered_row = [row[i] for i in colonnes_a_afficher]
-            filtered_row.append(fonct_annexe.test_presence_fichier(f"sstv/{filtered_row[2]}{filtered_row[3]}.png"))  # Ajoute l'image à la fin de filtered_row
+            filtered_row.append(fonct_annexe.test_presence_fichier(
+                f"sstv/{filtered_row[2]}{filtered_row[3]}.png"))  # Ajoute l'image à la fin de filtered_row
             filtered_row[3] = f"{filtered_row[3][:2]}:{filtered_row[3][2:]}"
             filtered_row[2] = f"{filtered_row[2][6:]}-{filtered_row[2][4:6]}-{filtered_row[2][:4]}"
 
             # Créer les items pour chaque cellule
             items = []
-            for index,field in enumerate(filtered_row):
+            for index, field in enumerate(filtered_row):
                 item = QtGui.QStandardItem()
                 if field and field != "0":
                     if isinstance(field, str) and (field.endswith(".png") or field.endswith(".jpg")):
                         # Charger l'image dans un QImage
                         image = QPixmap(field)  # Utilise le chemin pour créer un QImage
-                        icon = QIcon("sstv/icon.png")  # Créer un QIcon à partir du QPixmap redimensionné
+
                         item.setIcon(icon)  # Assigner l'icône à l'élément
                         item.setData(field, QtCore.Qt.UserRole)  # Utiliser Qt.UserRole pour stocker le chemin
                     else:
@@ -147,7 +188,7 @@ class ApplicationIHM:
     def open_map(self):
         self.mapdialog = QtWidgets.QDialog()  # Crée un objet QDialog
         self.ui_map = grid.Ui_mapDialog()
-        self.ui_map.setupUi(self.mapdialog)  # Passez l'instance de dialog à setupUi
+        self.ui_map.setupUi(self.mapdialog, self.ma_station[3])  # Passez l'instance de dialog à setupUi
         self.mapdialog.setWindowFlags(
             QtCore.Qt.WindowCloseButtonHint | QtCore.Qt.WindowTitleHint)  # suppression du bouton ? dans la barre de titre
         self.mapdialog.show()
@@ -241,25 +282,30 @@ class ApplicationIHM:
         else:
             data = [self.ui.affich_mycall.text(), self.ui.affich_mygrid.text(), self.ui2.saisie_calla.text(), self.ui2.saisie_date.text(), self.ui2.saisie_timeon.text(), self.ui2.saisie_freq.text(), self.ui2.choix_mode.currentText(), self.ui2.saisie_rsta.text(), self.ui2.saisie_comment.text(), self.ui2.saisie_callb.text(), self.ui2.saisie_timeoff.text(), self.ui2.saisie_rstb.text()]
             data_obligatoire = [2,5,7]
-            for index in data_obligatoire:
-                if not data[index]:
-                    self.show_message("warning", "Attention", "Certains champs obligatoires sont vides")
-                    return
-            if not self.ui2.saisie_date.text().isdigit() or len(self.ui2.saisie_date.text()) > 8 or int(self.ui2.saisie_date.text()[:2]) > 31 or int(self.ui2.saisie_date.text()[2:4]) > 12:
-                self.show_message("warning", "Attention", "DATE n'est pas correct")
-                return
-            if len(self.ui2.saisie_freq.text()) > 20:
-                self.show_message("warning", "Attention", "FREQ est trop long")
-                return
-            if not self.ui2.saisie_rsta.text().isdigit() or len(self.ui2.saisie_rsta.text()) > 5:
-                self.show_message("warning", "Attention", "RST_SENT n'est pas correct")
-                return
-            band_qso = "None"
-            for i, (min_freq, max_freq) in enumerate(self.BANDS_RANGES):
+            if not self.validate_qso_data(data):
+                return  # Validation échouée, retournez sans continuer
+
+            '''band_qso = "None"
+                for i, (min_freq, max_freq) in enumerate(self.BANDS_RANGES):
                 if min_freq is not None and max_freq is not None:
                     if min_freq <= int(self.ui2.saisie_freq.text()) <= max_freq:
                         # Retourne le nom de la bande et sa plage
-                        band_qso = self.BANDS[i]
+                        band_qso = self.BANDS[i]'''
+            # freq` est la fréquence saisie par l'utilisateur.
+            freq = int(self.ui2.saisie_freq.text())
+
+            # Initialisez une variable pour stocker le résultat
+            band_qso = None
+
+            # Parcourez le dictionnaire pour trouver la bande correspondante
+            for band, (min_freq, max_freq) in self.BANDS_DATA.items():
+                if min_freq is not None and max_freq is not None:
+                    if min_freq <= freq <= max_freq:
+                        # Assignez le nom de la bande et sa plage à `band_qso`
+                        band_qso = (band, (min_freq, max_freq))
+                        break  # On peut arrêter la boucle une fois la bande trouvée
+
+            # band_qso contient maintenant le nom de la bande et sa plage, ou None si rien n'a été trouvé
 
             if typeqso == "new":
                 sql = "INSERT INTO qso (STATION_CALLSIGN, MY_GRIDSQUARE, CALL, QSO_DATE, TIME_ON, BAND, FREQ, MODE, RST_SENT, COMMENT, CALL_B, TIME_OFF, RST_B, export) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)"
@@ -279,6 +325,7 @@ class ApplicationIHM:
                     self.ui2.saisie_timeoff.text(),
                     self.ui2.saisie_rstb.text()
                 )
+
                 # Appel à la fonction d'insertion
                 if connection.db.insert_data(sql, data):
                     # Si l'insertion a réussi, lance une autre action
@@ -326,6 +373,33 @@ class ApplicationIHM:
                 else:
                     # Si la modification a échouée, affiche une erreur
                     self.show_message("warning", "Erreur", "La modification a échoué")
+
+    # validation du formulaire QSO
+    def validate_qso_data(self, data):
+        """ Validate mandatory fields and formats for QSO data """
+        # Check mandatory fields
+        for index in [2, 5, 7]:
+            if not data[index]:
+                self.show_message("warning", "Attention", "Certains champs obligatoires sont vides")
+                return False
+
+        # Check date format
+        if not data[3].isdigit() or len(data[3]) > 8 or int(data[3][:2]) > 31 or int(data[3][2:4]) > 12:
+            self.show_message("warning", "Attention", "DATE n'est pas correct")
+            return False
+
+        # Check frequency length
+        if len(data[4]) > 20:
+            self.show_message("warning", "Attention", "FREQ est trop long")
+            return False
+
+        # Check RST_SENT format
+        if not data[5].isdigit() or len(data[5]) > 5:
+            self.show_message("warning", "Attention", "RST_SENT n'est pas correct")
+            return False
+
+        return True
+
 
 
     #affichage fenetre configuration ma station
@@ -468,6 +542,7 @@ class ApplicationIHM:
     def save_settings(self):
         self.settings.setValue("window/geometry", self.mw.saveGeometry())
         self.settings.setValue("window/state", self.mw.saveState())
+
 
 
 if __name__ == "__main__":
