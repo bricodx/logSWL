@@ -8,8 +8,10 @@ Cette première version est amenée a évoluer, puisque il est nécessaire d'ajo
 
 Ceci est mon premier logiciel en python (j'apprends le python en créant ce logiciel  :smiley: ).
 
+
 ## Prérequis
 Ce programme nécessite Python3.12 , pyQT5.15 ainsi que [ADIF-FILE](https://github.com/gitandy/PyADIF-File) 1.3 et BeautifulSoup4.12
+
 
 ## Roadmap
 - [x] 01/10/2024 Première version permettant d'enregistrer, modifier, et supprimer des QSO.
@@ -25,6 +27,7 @@ Pour faire progresser logSWL, vous pouvez contribuer en :
 - Signalant les erreurs ou problèmes rencontrés
 - Indiquant les fonctionnalités souhaitées
 - [![donate](https://img.shields.io/badge/donate-PayPal-blue.svg)](https://paypal.me/bricodx)
+
 
 ## License
 Ce programme est sous licence [GPL-3.0](https://choosealicense.com/licenses/gpl-3.0/)

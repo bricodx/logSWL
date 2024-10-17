@@ -31,6 +31,7 @@ def position_pin(gridsquare = 'JN18eu' ):
     return lat, lon
 
 
+
 class Ui_mapDialog(object):
     def setupUi(self, mapDialog, mygrid = 'JN18eu'):
         mapDialog.setObjectName("mapDialog")

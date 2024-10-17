@@ -26,18 +26,6 @@ class ApplicationIHM:
         self.app.setWindowIcon(QtGui.QIcon("logo32x32.png"))
         self.actionqso = 0
 
-        '''# All the bands listed in the ADIF specification.
-        self.BANDS = ["", "2190m", "630m", "560m", "160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m",
-                 "6m", "4m", "2m", "1.25m", "70cm", "33cm", "23cm", "13cm", "9cm", "6cm", "3cm", "1.25cm", "6mm", "4mm",
-                 "2.5mm", "2mm", "1mm"]
-        # The lower and upper frequency bounds (in MHz) for each band in BANDS.
-        self.BANDS_RANGES = [(None, None), (136, 137), (472, 479), (501, 504), (1800, 2000), (3500, 4000),
-                        (5102, 5406.5), (7000, 7300), (10000, 10150), (14000, 14350), (18068, 18168), (21000, 21450),
-                        (24890, 24990), (28000, 29700), (50000, 54000), (70000, 71000), (144000, 148000), (222000, 225000),
-                        (420000, 450000), (902000, 928000), (1240000, 1300000), (2300000, 2450000), (3300000, 3500000),
-                        (5650000, 5925000), (10000000, 10500000), (24000000, 24250000), (47000000, 47200000),
-                        (75500000, 81000000), (119980000, 120020000), (142000000, 149000000), (241000000, 250000000)]'''
-
         # Dictionnaire pour stocker les bandes et leurs plages de fréquences
         self.BANDS_DATA = {
             "": (None, None),
