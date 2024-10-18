@@ -304,7 +304,7 @@ class ApplicationIHM:
                     fonct_annexe.format_callsign(self.ui2.saisie_calla.text()),
                     f"{self.ui2.saisie_date.text()[4:]}{self.ui2.saisie_date.text()[2:4]}{self.ui2.saisie_date.text()[:2]}",
                     self.ui2.saisie_timeon.text(),
-                    band_qso,
+                    band_qso[0],
                     self.ui2.saisie_freq.text(),
                     self.ui2.choix_mode.currentText(),
                     self.ui2.saisie_rsta.text(),
@@ -313,7 +313,6 @@ class ApplicationIHM:
                     self.ui2.saisie_timeoff.text(),
                     self.ui2.saisie_rstb.text()
                 )
-
                 # Appel à la fonction d'insertion
                 if connection.db.insert_data(sql, data):
                     # Si l'insertion a réussi, lance une autre action
@@ -337,7 +336,7 @@ class ApplicationIHM:
                     fonct_annexe.format_callsign(self.ui2.saisie_calla.text()),
                     f"{self.ui2.saisie_date.text()[4:]}{self.ui2.saisie_date.text()[2:4]}{self.ui2.saisie_date.text()[:2]}",
                     self.ui2.saisie_timeon.text(),
-                    band_qso,
+                    band_qso[0],
                     self.ui2.saisie_freq.text(),
                     self.ui2.choix_mode.currentText(),
                     self.ui2.saisie_rsta.text(),
