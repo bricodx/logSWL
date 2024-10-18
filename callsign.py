@@ -43,7 +43,7 @@ def verif_callsign(qrz):
             grid =  call_data.get("Locator")
             data = (qrz, nom_complet_sans_plus, itu_zone, dxcc, cq_zone, prefix, grid)
         else:
-            return
+            data = (qrz,None,None,None,None,None,None) # si le call n'est pas déjà dans la base, on l'enregistre même si l'on ne trouve aucune info
         # execution de la requete préparée
         if connection.db.insert_data(sql, data):
             print("call enregistré")
