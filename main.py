@@ -282,10 +282,9 @@ class ApplicationIHM:
                         # Retourne le nom de la bande et sa plage
                         band_qso = self.BANDS[i]'''
             # freq` est la fréquence saisie par l'utilisateur.
-            freq = int(self.ui2.saisie_freq.text())
-
+            freq = float(self.ui2.saisie_freq.text())
             # Initialisez une variable pour stocker le résultat
-            band_qso = None
+            band_qso = (None, (None, None))
 
             # Parcourez le dictionnaire pour trouver la bande correspondante
             for band, (min_freq, max_freq) in self.BANDS_DATA.items():
@@ -294,7 +293,6 @@ class ApplicationIHM:
                         # Assignez le nom de la bande et sa plage à `band_qso`
                         band_qso = (band, (min_freq, max_freq))
                         break  # On peut arrêter la boucle une fois la bande trouvée
-
             # band_qso contient maintenant le nom de la bande et sa plage, ou None si rien n'a été trouvé
 
             if typeqso == "new":
@@ -366,6 +364,11 @@ class ApplicationIHM:
     # validation du formulaire QSO
     def validate_qso_data(self, data):
         """ Validate mandatory fields and formats for QSO data """
+        data = [self.ui.affich_mycall.text(), self.ui.affich_mygrid.text(), self.ui2.saisie_calla.text(),
+                self.ui2.saisie_date.text(), self.ui2.saisie_timeon.text(), self.ui2.saisie_freq.text(),
+                self.ui2.choix_mode.currentText(), self.ui2.saisie_rsta.text(), self.ui2.saisie_comment.text(),
+                self.ui2.saisie_callb.text(), self.ui2.saisie_timeoff.text(), self.ui2.saisie_rstb.text()]
+
         # Check mandatory fields
         for index in [2, 5, 7]:
             if not data[index]:
@@ -378,12 +381,12 @@ class ApplicationIHM:
             return False
 
         # Check frequency length
-        if len(data[4]) > 20:
+        if len(data[5]) > 20:
             fonct_annexe.show_message("warning", "Attention", "FREQ est trop long")
             return False
 
         # Check RST_SENT format
-        if not data[5].isdigit() or len(data[5]) > 5:
+        if not data[7].isdigit() or len(data[7]) > 5:
             fonct_annexe.show_message("warning", "Attention", "RST_SENT n'est pas correct")
             return False
 
@@ -496,7 +499,6 @@ class ApplicationIHM:
         saisie_login =str(self.ui4.saisie_login.text())
         saisie_mdp = str(self.ui4.saisie_mdp.text())
         saisie_apijson = str(self.ui4.saisie_apikey_json.text())
-        saisie_apixml = str(self.ui4.saisie_apikey_xml.text())
         if saisie_login and saisie_mdp:
             # Enregistrer la langue sélectionnée dans les paramètres
             self.settings.setValue("login_qrzcq", saisie_login)
