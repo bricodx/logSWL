@@ -488,7 +488,6 @@ class ApplicationIHM:
         self.ui4.saisie_login.setText(self.settings.value("login_qrzcq", "")) # "" par défaut si login_qrzcq est non configuré
         self.ui4.saisie_mdp.setText(self.settings.value("mdp_qrzcq", "")) # "" par défaut si mdp_qrzcq est non configuré
         self.ui4.saisie_apikey_json.setText(self.settings.value("apijson_qrzcq", ""))
-        self.ui4.saisie_apikey_xml.setText(self.settings.value("apixml_qrzcq", ""))
         self.ui4.bouton_enregister.clicked.connect(self.save_config_connex)  # confirmation d'action
         self.ui4.bouton_raz.clicked.connect(self.raz_connex) #action RAZ de la connexion
 
@@ -503,7 +502,6 @@ class ApplicationIHM:
             self.settings.setValue("login_qrzcq", saisie_login)
             self.settings.setValue("mdp_qrzcq", saisie_mdp)
             self.settings.setValue("apijson_qrzcq",saisie_apijson)
-            self.settings.setValue("apixml_qrzcq", saisie_apixml)
             fonct_annexe.show_message("info", "Succès", "Accès enregistré avec succès")
             self.connexdialog.close()
         else:
@@ -611,7 +609,6 @@ class ApplicationIHM:
         # Charger la position et la taille de la fenêtre principale
         geometry = self.settings.value("window/geometry")
         state = self.settings.value("window/state")
-        self.apikey_xml = self.settings.value("apixml_qrzcq")
         if geometry:
             self.mw.restoreGeometry(geometry)
         if state:
