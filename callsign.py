@@ -62,13 +62,13 @@ def renouveler_cle_api():
         print("vous n'avez de login et mdp QRZCQ")
 
 def traitement_qrzcq(qrz):
-    api_qrzcq_key = settings.value("apixml_qrzcq")
     while True:  # Boucle infinie pour relancer la fonction si nécessaire
         # Envoi de la requête GET
-        api_qrzcq_key = settings.value("apixml_qrzcq")
+        api_qrzcq_key = settings.value("apixml_qrzcq","")
         api_url = f"https://ssl.qrzcq.com/xml?s={api_qrzcq_key}&callsign={qrz}&agent=Program"
         response = requests.get(api_url)
         # Vérification de la réponse
+        print(response.text)
         if response.status_code == 200:
                 # Parser la réponse XML
             root = ET.fromstring(response.text)
@@ -84,6 +84,9 @@ def traitement_qrzcq(qrz):
                     if api_qrzcq_key is None:  # Si le renouvellement échoue, sort de la boucle
                         break
                     continue  # Relance le traitement avec la nouvelle clé
+                elif erreur_api == f"Not found: {qrz}":
+                    print(f"Erreur : aucun {qrz} sur QRZCQ")
+                    break  # Quitte la boucle si c'est une autre erreur
                 else:
                     print("Erreur : ", erreur_api)
                     break  # Quitte la boucle si c'est une autre erreur
