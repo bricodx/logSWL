@@ -364,10 +364,6 @@ class ApplicationIHM:
     # validation du formulaire QSO
     def validate_qso_data(self, data):
         """ Validate mandatory fields and formats for QSO data """
-        data = [self.ui.affich_mycall.text(), self.ui.affich_mygrid.text(), self.ui2.saisie_calla.text(),
-                self.ui2.saisie_date.text(), self.ui2.saisie_timeon.text(), self.ui2.saisie_freq.text(),
-                self.ui2.choix_mode.currentText(), self.ui2.saisie_rsta.text(), self.ui2.saisie_comment.text(),
-                self.ui2.saisie_callb.text(), self.ui2.saisie_timeoff.text(), self.ui2.saisie_rstb.text()]
 
         # Check mandatory fields
         for index in [2, 5, 7]:
