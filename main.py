@@ -16,7 +16,31 @@ import logging
 import grid
 
 # Configuration du logger
-logging.basicConfig(level=logging.DEBUG)  # Changez en logging.INFO ou  logging.DEBUG
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+file_handler = logging.FileHandler("app.log")
+file_handler.setLevel(logging.DEBUG)  # Définir le niveau du fichier
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.DEBUG)  # Définir le niveau du terminal
+stream_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
+logger.addHandler(stream_handler)
+
+# Fonction pour capturer les erreurs non prévues
+def handle_exception(exc_type, exc_value, exc_traceback):
+    if issubclass(exc_type, KeyboardInterrupt):
+        # Ne pas consigner les interruptions clavier comme erreurs
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+    logger.error("Une erreur non prévue s'est produite", exc_info=(exc_type, exc_value, exc_traceback))
+
+# Assigner notre fonction au gestionnaire global d'exceptions
+sys.excepthook = handle_exception
 
 class ApplicationIHM:
     def __init__(self):
@@ -417,7 +441,6 @@ class ApplicationIHM:
 
     #enregistrement des données du formulaire callsign
     def save_callsign(self, action = "new"):
-        print(action)
         if self.ui_callsign.saisie_call.text():
             sql = "INSERT INTO callsign (nom, ITU, DXCC, CQZONE, gridsquare, adresse1, zipcode, ville, pays, call) VALUES (?,?,?,?,?,?,?,?,?,?)"
             data = [
