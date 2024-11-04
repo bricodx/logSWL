@@ -4,9 +4,27 @@ import requests
 import xml.etree.ElementTree as ET
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QSettings
+import logging
+
 
 # Initialisation des paramètres pour mémoriser la configuration
 settings = QSettings("bricodx_dev", "logSWL")
+
+# Configuration du logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+file_handler = logging.FileHandler("app.log")
+file_handler.setLevel(logging.DEBUG)  # Définir le niveau du fichier
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.DEBUG)  # Définir le niveau du terminal
+stream_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
+logger.addHandler(stream_handler)
 
 
 def verif_callsign(qrz = None):
@@ -23,12 +41,12 @@ def verif_callsign(qrz = None):
                 result_scrap[6], result_scrap[7], result_scrap[8], result_scrap[9], result_scrap[10], result_scrap[11])
             # execution de la requete préparée
             if connection.db.exec_data(sql, data):
-                print("call enregistré")
+                logger.info("call enregistré")
             else:
-                print("erreur bdd")
+                logger.error("erreur bdd")
 
     else:
-        print("call déjà présent dans la base")
+        logger.info("call déjà présent dans la base")
 
 
 def renouveler_cle_api():
@@ -37,113 +55,131 @@ def renouveler_cle_api():
     if login and mdp:
         api_url = f"https://ssl.qrzcq.com/xml?username={login}&password={mdp}&agent=Program"
         # Envoi de la requête GET
-        response = requests.get(api_url)
-        # Vérification de la réponse
-        if response.status_code == 200:
-            # Parser la réponse XML
-            root = ET.fromstring(response.text)
+        try :
+            response = requests.get(api_url, timeout=10)
+            # Vérification de la réponse
+            if response.status_code == 200:
+                # Parser la réponse XML
+                root = ET.fromstring(response.text)
 
-            # Namespace à définir pour les balises
-            namespace = {'qrz': 'http://qrzcq.com'}
+                # Namespace à définir pour les balises
+                namespace = {'qrz': 'http://qrzcq.com'}
 
-            # Extraire la nouvelle clé
-            key_element = root.find('.//qrz:Key', namespace)
-            if key_element is not None:
-                nouvelle_cle = key_element.text
-                print(f"Nouvelle clé API obtenue : {nouvelle_cle}")
-                settings.setValue("apixml_qrzcq", nouvelle_cle)
+                # Extraire la nouvelle clé
+                key_element = root.find('.//qrz:Key', namespace)
+                if key_element is not None:
+                    nouvelle_cle = key_element.text
+                    logger.info(f"Nouvelle clé API obtenue : {nouvelle_cle}")
+                    settings.setValue("apixml_qrzcq", nouvelle_cle)
+                else:
+                    logger.error("Erreur : Impossible de trouver la nouvelle clé API.")
+                    return None
             else:
-                print("Erreur : Impossible de trouver la nouvelle clé API.")
+                logger.error(f"Erreur lors du renouvellement de la clé API, code HTTP : {response.status_code}")
                 return None
-        else:
-            print(f"Erreur lors du renouvellement de la clé API, code HTTP : {response.status_code}")
+        except requests.exceptions.Timeout:
+            logger.error("Erreur : La demande a dépassé le délai d'attente.")
+            return None
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Erreur de connexion : {e}")
             return None
     else:
-        print("vous n'avez de login et mdp QRZCQ")
+        logger.info("vous n'avez de login et mdp QRZCQ")
+        return None
+
 
 def traitement_qrzcq(qrz):
     while True:  # Boucle infinie pour relancer la fonction si nécessaire
         # Envoi de la requête GET
         api_qrzcq_key = settings.value("apixml_qrzcq","")
         api_url = f"https://ssl.qrzcq.com/xml?s={api_qrzcq_key}&callsign={qrz}&agent=Program"
-        response = requests.get(api_url)
-        # Vérification de la réponse
-        print(response.text)
-        if response.status_code == 200:
-                # Parser la réponse XML
-            root = ET.fromstring(response.text)
-            # Namespace à définir pour les balises
-            namespace = {'qrz': 'http://qrzcq.com'}
+        try:
+            response = requests.get(api_url, timeout=10)
+            # Vérification de la réponse
+            if response.status_code == 200:
+                    # Parser la réponse XML
+                root = ET.fromstring(response.text)
+                # Namespace à définir pour les balises
+                namespace = {'qrz': 'http://qrzcq.com'}
 
-            erreur_api = root.find('.//qrz:Error', namespace)
-            if erreur_api is not None:
-                erreur_api = erreur_api.text
-                if erreur_api == "Session Timeout":
-                    print("Erreur : Session Timeout détectée.")
-                    api_qrzcq_key = renouveler_cle_api()  # Renouvelle la clé API
-                    if api_qrzcq_key is None:  # Si le renouvellement échoue, sort de la boucle
-                        break
-                    continue  # Relance le traitement avec la nouvelle clé
-                elif erreur_api == f"Not found: {qrz}":
-                    print(f"Erreur : aucun {qrz} sur QRZCQ")
-                    break  # Quitte la boucle si c'est une autre erreur
+                erreur_api = root.find('.//qrz:Error', namespace)
+                if erreur_api is not None:
+                    erreur_api = erreur_api.text
+                    if erreur_api == "Session Timeout":
+                        logger.info("Erreur : Session Timeout détectée.")
+                        api_qrzcq_key = renouveler_cle_api()  # Renouvelle la clé API
+                        if api_qrzcq_key is None:  # Si le renouvellement échoue, sort de la boucle
+                            break
+                        continue  # Relance le traitement avec la nouvelle clé
+                    elif erreur_api == f"Not found: {qrz}":
+                        logger.info(f"Erreur : aucun {qrz} sur QRZCQ")
+                        break  # Quitte la boucle si c'est une autre erreur
+                    else:
+                        logger.info("Erreur : ", erreur_api)
+                        break  # Quitte la boucle si c'est une autre erreur
+
+                if root.find('qrz:Callsign/qrz:name', namespace) is not None:
+                    nom_complet_sans_plus = root.find('qrz:Callsign/qrz:name', namespace).text
                 else:
-                    print("Erreur : ", erreur_api)
-                    break  # Quitte la boucle si c'est une autre erreur
+                    nom_complet_sans_plus = None
+                if root.find('qrz:Callsign/qrz:address', namespace) is not None:
+                    address = root.find('qrz:Callsign/qrz:address', namespace).text
+                else:
+                    address = None
+                if root.find('qrz:Callsign/qrz:zip', namespace) is not None:
+                    zipcode = root.find('qrz:Callsign/qrz:zip', namespace).text
+                else:
+                    zipcode = None
+                if root.find('qrz:Callsign/qrz:city', namespace) is not None:
+                    city = root.find('qrz:Callsign/qrz:city', namespace).text
+                else:
+                    city = None
+                if root.find('qrz:Callsign/qrz:country', namespace) is not None:
+                    country = root.find('qrz:Callsign/qrz:country', namespace).text
+                else:
+                    country = None
+                if root.find('qrz:Callsign/qrz:locator', namespace) is not None:
+                    grid = root.find('qrz:Callsign/qrz:locator', namespace).text
+                else:
+                    grid = None
+                if root.find('qrz:Callsign/qrz:dxcc', namespace) is not None:
+                    dxcc = root.find('qrz:Callsign/qrz:dxcc', namespace).text
+                else:
+                    dxcc = None
+                if root.find('qrz:Callsign/qrz:itu', namespace) is not None:
+                    itu_zone = root.find('qrz:Callsign/qrz:itu', namespace).text
+                else:
+                    itu_zone = None
+                if root.find('qrz:Callsign/qrz:cq', namespace) is not None:
+                    cq_zone = root.find('qrz:Callsign/qrz:cq', namespace).text
+                else:
+                    cq_zone = None
+                if root.find('qrz:Callsign/qrz:lotw', namespace) is not None:
+                    lotw = root.find('qrz:Callsign/qrz:lotw', namespace).text
+                else:
+                    lotw = 0
+                if root.find('qrz:Callsign/qrz:prefix', namespace) is not None:
+                    prefix = root.find('qrz:Callsign/qrz:prefix', namespace).text
+                else:
+                    prefix = None
+                if root.find('qrz:Callsign/qrz:eqsl', namespace) is not None:
+                     eqsl = root.find('qrz:Callsign/qrz:eqsl', namespace).text
+                else:
+                    eqsl = 0
 
-            if root.find('qrz:Callsign/qrz:name', namespace) is not None:
-                nom_complet_sans_plus = root.find('qrz:Callsign/qrz:name', namespace).text
+                return nom_complet_sans_plus, itu_zone, dxcc, cq_zone, prefix, grid, lotw, address, zipcode, city, country, eqsl
             else:
-                nom_complet_sans_plus = None
-            if root.find('qrz:Callsign/qrz:address', namespace) is not None:
-                address = root.find('qrz:Callsign/qrz:address', namespace).text
-            else:
-                address = None
-            if root.find('qrz:Callsign/qrz:zip', namespace) is not None:
-                zipcode = root.find('qrz:Callsign/qrz:zip', namespace).text
-            else:
-                zipcode = None
-            if root.find('qrz:Callsign/qrz:city', namespace) is not None:
-                city = root.find('qrz:Callsign/qrz:city', namespace).text
-            else:
-                city = None
-            if root.find('qrz:Callsign/qrz:country', namespace) is not None:
-                country = root.find('qrz:Callsign/qrz:country', namespace).text
-            else:
-                country = None
-            if root.find('qrz:Callsign/qrz:locator', namespace) is not None:
-                grid = root.find('qrz:Callsign/qrz:locator', namespace).text
-            else:
-                grid = None
-            if root.find('qrz:Callsign/qrz:dxcc', namespace) is not None:
-                dxcc = root.find('qrz:Callsign/qrz:dxcc', namespace).text
-            else:
-                dxcc = None
-            if root.find('qrz:Callsign/qrz:itu', namespace) is not None:
-                itu_zone = root.find('qrz:Callsign/qrz:itu', namespace).text
-            else:
-                itu_zone = None
-            if root.find('qrz:Callsign/qrz:cq', namespace) is not None:
-                cq_zone = root.find('qrz:Callsign/qrz:cq', namespace).text
-            else:
-                cq_zone = None
-            if root.find('qrz:Callsign/qrz:lotw', namespace) is not None:
-                lotw = root.find('qrz:Callsign/qrz:lotw', namespace).text
-            else:
-                lotw = 0
-            if root.find('qrz:Callsign/qrz:prefix', namespace) is not None:
-                prefix = root.find('qrz:Callsign/qrz:prefix', namespace).text
-            else:
-                prefix = None
-            if root.find('qrz:Callsign/qrz:eqsl', namespace) is not None:
-                 eqsl = root.find('qrz:Callsign/qrz:eqsl', namespace).text
-            else:
-                eqsl = 0
+                logger.error(f"Erreur de connexion, code HTTP : {response.status_code}")
+                break  # Quitte la boucle pour d'autres erreurs de connexion
 
-            return nom_complet_sans_plus, itu_zone, dxcc, cq_zone, prefix, grid, lotw, address, zipcode, city, country, eqsl
-        else:
-            print(f"Erreur de connexion, code HTTP : {response.status_code}")
-            break  # Quitte la boucle pour d'autres erreurs de connexion
+        except requests.exceptions.ConnectTimeout:
+            logger.error("Erreur : La connexion a dépassé le délai d'attente.")
+            break  # On peut également utiliser `continue` pour réessayer
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Erreur de connexion : {e}")
+            break
 
 
 class Ui_fen_callsign(object):
