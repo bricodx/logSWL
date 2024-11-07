@@ -103,7 +103,8 @@ class ApplicationIHM:
         self.ui.actionADIFeqsl.triggered.connect(fonct_annexe.export_adi)
         self.ui.actionQuitter.triggered.connect(self.app.quit)
         # Connexion des actions du menu Cartes
-        self.ui.actionMap_des_QSO.triggered.connect(self.open_map)
+        self.ui.actiontricartes_mode.triggered.connect(lambda: self.open_map("Mode"))
+        self.ui.actiontricartes_band.triggered.connect(lambda: self.open_map("Band"))
         # Connexion des actions du menu Configuration
         self.ui.actionMa_station.triggered.connect(self.open_station_dialog)
         self.ui.actionQRZCQ.triggered.connect(self.open_connex_dialog)
@@ -200,10 +201,10 @@ class ApplicationIHM:
 
         model.appendRow(items)
 
-    def open_map(self):
+    def open_map(self, choixcarte=None):
         self.mapdialog = QtWidgets.QDialog()  # Crée un objet QDialog
         self.ui_map = grid.Ui_mapDialog()
-        self.ui_map.setupUi(self.mapdialog, self.ma_station[3])  # Passez l'instance de dialog à setupUi
+        self.ui_map.setupUi(self.mapdialog, self.ma_station[3], choixcarte)  # Passez l'instance de dialog à setupUi
         self.mapdialog.setWindowFlags(
             QtCore.Qt.WindowCloseButtonHint | QtCore.Qt.WindowTitleHint)  # suppression du bouton ? dans la barre de titre
         self.mapdialog.show()
