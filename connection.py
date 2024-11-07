@@ -2,7 +2,20 @@ import sqlite3
 import logging
 
 # Configuration du logger
-logging.basicConfig(level=logging.INFO)  # Changez en logging.INFO ou  logging.DEBUG
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+file_handler = logging.FileHandler("app.log")
+file_handler.setLevel(logging.DEBUG)  # Définir le niveau du fichier
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.DEBUG)  # Définir le niveau du terminal
+stream_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
+logger.addHandler(stream_handler)
 
 class DatabaseManager:
     def __init__(self, db_name):
