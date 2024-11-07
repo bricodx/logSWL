@@ -1,16 +1,15 @@
 ![logo logSWL](logo.png "logo logSWL")
 
 # logSWL
-Journal de trafic opensource pour les écouteurs.
+Journal de trafic opensource pour les radio-écouteurs.
 
 Il est développé avec les fonctions dont j'ai besoin, et qui me semblent essentielles.\
-Cette première version est amenée a évoluer, puisque il est nécessaire d'ajouter des contrôles de saisie et de corriger les éventuels bugs.
 
 Ceci est mon premier logiciel en python (j'apprends le python en créant ce logiciel  :smiley: ).
 
 
 ## Prérequis
-Ce programme nécessite Python3.12 , pyQT5.15 ainsi que [ADIF-FILE](https://github.com/gitandy/PyADIF-File) 1.3 et BeautifulSoup4.12
+Ce programme nécessite Python3.12 , pyQT5.15 ainsi que [ADIF-FILE](https://github.com/gitandy/PyADIF-File) 1.3
 
 
 ## Roadmap
@@ -19,8 +18,9 @@ Ce programme nécessite Python3.12 , pyQT5.15 ainsi que [ADIF-FILE](https://gith
 - [x] 10/10/2024 Carte des pays écoutés
 - [x] 15/10/2024 Ajout de la traduction de l'application
 - [x] 18/10/2024 La map des QSO peut maintenant être filtrée par BAND, et elle est centrée sur votre locator (à la place de Paris)
-- [ ] intégration API QRZCQ
-- [ ] Possibilité de voir l'image reçu d'un QSO SSTV
+- [x] 30/10/2024 Possibilité de voir l'image reçu d'un QSO SSTV
+- [x] 07/11/2024 intégration API QRZCQ
+
 
 
 ## Contributions
