@@ -252,6 +252,7 @@ class ApplicationIHM:
         self.ui2.saisie_date.setText(self.now_utc.strftime("%d%m%Y")) # Format de la date et de l'heure
         self.ui2.bouton_enregister.clicked.connect(lambda: self.save_qso(typeqso[0], ligne_selectionnee)) #confirmation d'action
         self.ui2.bouton_annuler.clicked.connect(self.qsodialog.close)
+        self.ui2.maj_heure.clicked.connect(self.maj_heure_qso)
         #masque de saisie
         fonct_annexe.appliquer_validateur_float(self.ui2.saisie_freq, decimales=4)
         self.ui2.saisie_freq.setPlaceholderText("1,234.5678")
@@ -279,6 +280,9 @@ class ApplicationIHM:
                 if lignebdd[10] in [self.ui2.choix_mode.itemText(i) for i in range(self.ui2.choix_mode.count())]:
                     self.ui2.choix_mode.setCurrentText(lignebdd[10])
 
+    # mise a jour de l'heure si clic sur update
+    def maj_heure_qso(self):
+        self.ui2.saisie_timeon.setText(self.now_utc.strftime("%H%M"))
 
     # Méthode pour enregistrer la saisie d'un nouveau QSO en BDD
     def save_qso(self, typeqso , ligne_selectionnee):
